@@ -1,4 +1,3 @@
-
 name: CI
 
 on:
@@ -9,16 +8,18 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
 
-      - name: Set up Node.js
+    steps:
+      - name: ⬇️ Checkout code
+        uses: actions/checkout@v3
+
+      - name: 🔧 Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
 
-      - name: Install dependencies
+      - name: 📦 Install dependencies
         run: npm install
 
-      - name: Run tests (optional)
-        run: echo "No tests yet, but this is where they’d go"
+      - name: 🧪 Run tests
+        run: npm test
