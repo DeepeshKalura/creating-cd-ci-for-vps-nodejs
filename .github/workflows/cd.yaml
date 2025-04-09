@@ -17,7 +17,6 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
           script: |
-            # Variables
             PROJECT_DIR="/var/www/backend"
             GIT_URL="https://github.com/DeepeshKalura/creating-cd-ci-for-vps-nodejs"
 
@@ -42,21 +41,21 @@ jobs:
             fi
 
             echo "📁 Checking if project exists..."
-            if [ -d "$PROJECT_DIR/.git" ]; then
+            if sudo test -d "$PROJECT_DIR/.git"; then
               echo "📥 Project exists, pulling latest..."
               cd $PROJECT_DIR
-              git pull origin main
-              npm install --production
+              sudo git pull origin main
+              sudo npm install --omit=dev
               echo "♻️ Restarting with PM2..."
-              pm2 restart backend || pm2 start index.js --name backend
+              pm2 restart backend || pm2 start index.js --name backend --cwd $PROJECT_DIR
             else
               echo "📦 Project not found, cloning fresh..."
-              rm -rf $PROJECT_DIR
-              git clone $GIT_URL $PROJECT_DIR
+              sudo rm -rf $PROJECT_DIR
+              sudo git clone $GIT_URL $PROJECT_DIR
               cd $PROJECT_DIR
-              npm install --production
+              sudo npm install --omit=dev
               echo "🚀 Starting with PM2..."
-              pm2 start index.js --name backend
+              pm2 start index.js --name backend --cwd $PROJECT_DIR
             fi
 
             echo "🎉 Deployment complete."
