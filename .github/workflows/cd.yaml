@@ -59,7 +59,7 @@ jobs:
             else
               echo "📦 Project not found, cloning fresh..."
               sudo rm -rf $PROJECT_DIR
-              git clone $GIT_URL $PROJECT_DIR
+              sudo git clone $GIT_URL $PROJECT_DIR
               cd $PROJECT_DIR
 
               echo "🧹 Fixing permissions..."
