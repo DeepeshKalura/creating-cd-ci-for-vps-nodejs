@@ -1,4 +1,7 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3
+"""
+This is the general script using for the deployment in the vps project
+"""
 import os
 import sys
 import subprocess

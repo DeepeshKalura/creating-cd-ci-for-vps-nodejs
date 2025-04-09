@@ -13,14 +13,14 @@ jobs:
         uses: actions/checkout@v4
 
       - name: 🚀 Copy Deployment Script to Azure VM
-        uses: appleboy/scp-action@v0.1.4
+        uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.AZURE_VM_IP }}
           username: azureuser
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
           source: "scripts/deploy.py"
-          target: "~/deploy.py"
+          target: "~/"
 
       - name: 🔧 Run Deployment Script via SSH
         uses: appleboy/ssh-action@v1
@@ -31,4 +31,5 @@ jobs:
           port: 22
           script: |
             echo "🐍 Running Python Deployment Script..."
-            python3 ~/deploy.py && rm ~/deploy.py
+            python3 ~/deploy.py
+            rm ~/deploy.py
