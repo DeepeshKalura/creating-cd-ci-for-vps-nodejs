@@ -9,7 +9,20 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 🚀 Deploy to Azure VM
+      - name: 🧾 Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: 🚀 Copy Deployment Script to Azure VM
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ secrets.AZURE_VM_IP }}
+          username: azureuser
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          source: "scripts/deploy.py"
+          target: "~/deploy.py"
+
+      - name: 🔧 Run Deployment Script via SSH
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.AZURE_VM_IP }}
@@ -17,59 +30,5 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
           script: |
-            set -e  
-
-            PROJECT_DIR="/var/www/backend"
-            GIT_URL="https://github.com/DeepeshKalura/creating-cd-ci-for-vps-nodejs"
-
-            echo "🔧 Installing NVM and Node.js v22..."
-            export NVM_DIR="$HOME/.nvm"
-            if [ ! -d "$NVM_DIR" ]; then
-              curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.2/install.sh | bash
-            fi
-            . "$NVM_DIR/nvm.sh"
-
-            nvm install 22
-            nvm use 22
-            echo "✅ Node version: $(node -v)"
-            echo "✅ NPM version: $(npm -v)"
-
-            echo "🔍 Checking PM2..."
-            if ! command -v pm2 &> /dev/null; then
-              echo "🛠️ PM2 not found. Installing..."
-              npm install -g pm2
-            else
-              echo "✅ PM2 is already installed: $(pm2 -v)"
-            fi
-
-            echo "📁 Checking if project exists..."
-            if [ -d "$PROJECT_DIR/.git" ]; then
-              echo "📥 Project exists, pulling latest..."
-              cd $PROJECT_DIR
-              git pull origin main
-
-              echo "🧹 Fixing permissions..."
-              sudo chown -R $USER:$USER $PROJECT_DIR
-
-              echo "📦 Installing dependencies..."
-              npm install --omit=dev
-
-              echo "♻️ Restarting with PM2..."
-              pm2 restart backend || pm2 start index.js --name backend --cwd $PROJECT_DIR
-            else
-              echo "📦 Project not found, cloning fresh..."
-              sudo rm -rf $PROJECT_DIR
-              sudo git clone $GIT_URL $PROJECT_DIR
-              cd $PROJECT_DIR
-
-              echo "🧹 Fixing permissions..."
-              sudo chown -R $USER:$USER $PROJECT_DIR
-
-              echo "📦 Installing dependencies..."
-              npm install --omit=dev
-
-              echo "🚀 Starting with PM2..."
-              pm2 start index.js --name backend --cwd $PROJECT_DIR
-            fi
-
-            echo "🎉 Deployment complete."
+            echo "🐍 Running Python Deployment Script..."
+            python3 ~/deploy.py && rm ~/deploy.py
