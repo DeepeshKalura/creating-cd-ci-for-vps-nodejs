@@ -45,7 +45,7 @@ jobs:
               echo "📥 Project exists, pulling latest..."
               cd $PROJECT_DIR
               sudo git pull origin main
-              sudo npm install --omit=dev
+              npm install --omit=dev
               echo "♻️ Restarting with PM2..."
               pm2 restart backend || pm2 start index.js --name backend --cwd $PROJECT_DIR
             else
