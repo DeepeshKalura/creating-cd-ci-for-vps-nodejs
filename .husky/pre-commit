@@ -1,5 +1,2 @@
-#!/bin/sh
-. "$(dirname "$0")/_/husky.sh"
-
-npm test || exit 1
-npx lint-staged || exit 1
+npm run pre-commit || exit 1
+npm run lint:fix || true 
