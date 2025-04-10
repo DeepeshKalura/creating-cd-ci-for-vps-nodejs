@@ -19,8 +19,8 @@ jobs:
           username: azureuser
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
-          source: 'scripts/deploy.py'
-          target: '~/'
+          source: "scripts/deploy.py"
+          target: "~/"
 
       - name: 🔧 Run Deployment Script via SSH
         uses: appleboy/ssh-action@v1
