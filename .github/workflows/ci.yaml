@@ -21,5 +21,8 @@ jobs:
       - name: 📦 Install dependencies
         run: npm install
 
+      - name: 🧹 Run lint (non-blocking)
+        run: npm run lint || echo "⚠️ Lint issues found, but not blocking CI"
+
       - name: 🧪 Run tests
         run: npm test
