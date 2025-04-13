@@ -9,8 +9,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "pre-commit": "npm test && npm run format",
-    "check": "npm test && npm run format && npm run lint:fix",
-    "prepare": "husky"
+    "check": "npm test && npm run format && npm run lint:fix"
   },
   "keywords": [],
   "author": "",
