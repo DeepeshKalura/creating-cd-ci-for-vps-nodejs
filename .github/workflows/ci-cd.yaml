@@ -67,5 +67,5 @@ jobs:
           port: 22
           script: |
             echo "🐍 Running Python Deployment Script..."
-            python3 ~/deploy.py
-            rm ~/deploy.py
+            python3 ~/scripts/deploy.py
+            rm ~/scripts -rf
