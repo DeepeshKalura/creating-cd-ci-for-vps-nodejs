@@ -1,0 +1,71 @@
+name: CI/CD Pipeline
+
+on:
+  # Run CI on all branches
+  push:
+    branches:
+      - "**"
+  # Also trigger on pull request events for main
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+    branches:
+      - main
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: ⬇️ Checkout code
+        uses: actions/checkout@v3
+
+      - name: 🔧 Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "22"
+
+      - name: 📦 Install dependencies
+        run: npm install
+
+      - name: 🧹 Run lint (non-blocking)
+        run: npm run lint || echo "⚠️ Lint issues found, but not blocking CI"
+
+      - name: 🧪 Run tests
+        run: npm test
+
+  deploy:
+    needs: build-and-test # Only deploy if build and tests pass
+    # Deploy when:
+    # 1. It's a direct push to main
+    # 2. OR it's a merged pull request to main
+    if: |
+      success() && 
+      (
+        (github.ref == 'refs/heads/main') || 
+        (github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true)
+      )
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🧾 Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: 🚀 Copy Deployment Script to Azure VM
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.AZURE_VM_IP }}
+          username: azureuser
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          source: "scripts/deploy.py"
+          target: "~/"
+
+      - name: 🔧 Run Deployment Script via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.AZURE_VM_IP }}
+          username: azureuser
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          script: |
+            echo "🐍 Running Python Deployment Script..."
+            python3 ~/deploy.py
+            rm ~/deploy.py

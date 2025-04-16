@@ -7,7 +7,6 @@ import sys
 import subprocess
 import time
 import logging
-from collections import deque
 
 # Configure logging with standard library only
 logging.basicConfig(
@@ -22,15 +21,6 @@ PROJECT_DIR = "/var/www/backend"
 GIT_URL = "https://github.com/DeepeshKalura/creating-cd-ci-for-vps-nodejs"
 NVM_DIR = os.path.expanduser("~/.nvm")
 NODE_VERSION = "22"
-
-# Queue to track deployment steps
-deployment_queue = deque([
-    "check_nvm_install",
-    "install_node",
-    "check_pm2_install",
-    "ensure_pm2_config",
-    "deploy_project"
-])
 
 def run_command(command, shell=False, cwd=None):
     """Run a command and return its output, handling errors"""
@@ -193,7 +183,7 @@ def deploy_project():
             # Restart with PM2
             logger.info("♻️ Restarting with PM2...")
             try:
-                run_as_user(f"pm2 restart backend")
+                run_as_user("pm2 restart backend")
                 logger.info("✅ Application restarted successfully")
             except Exception:
                 logger.info("Application not yet in PM2, starting fresh...")
@@ -202,6 +192,22 @@ def deploy_project():
             logger.error(f"Failed to update project: {e}")
             raise
     else:
+        # Before a fresh clone, check if anything is listening on port 3000 and remove it
+        logger.info("🔍 Checking if any process is listening on port 3000...")
+        try:
+            # List process IDs that are using port 3000.
+            pids = run_command("lsof -ti:3000", shell=True).strip().splitlines()
+            if pids:
+                logger.info(f"❗ Found process(es) using port 3000: {pids}. Terminating them...")
+                for pid in pids:
+                    run_command(f"sudo kill -9 {pid}", shell=True)
+                logger.info("✅ Existing processes on port 3000 terminated.")
+            else:
+                logger.info("✅ No processes found on port 3000.")
+        except Exception as e:
+            logger.error(f"Error checking/killing process on port 3000: {e}")
+            raise
+
         # Fresh clone
         logger.info("📦 Project not found, cloning fresh...")
         try:
@@ -228,26 +234,34 @@ def deploy_project():
             logger.error(f"Failed to clone project: {e}")
             raise
 
+def check_env_file():
+    """Check if .env file exists, prompt for creation if missing"""
+    logger.info("🔍 Checking for .env file...")
+    env_path = os.path.join(PROJECT_DIR, ".env")
+    
+    if not os.path.exists(env_path):
+        logger.warning("❗ .env file not found")
+        logger.info("Please create a .env file manually in the project directory")
+    else:
+        logger.info("✅ .env file exists")
+
 def main():
-    """Main function to execute deployment steps"""
+    """Main function to execute deployment steps sequentially"""
     logger.info("🚀 Starting deployment process...")
     
-    # Process each step in the queue
-    while deployment_queue:
-        current_step = deployment_queue.popleft()
+    try:
+        # Execute steps in sequence
+        check_nvm_install()
+        install_node()
+        check_pm2_install()
+        ensure_pm2_config()
+        deploy_project()
+        check_env_file()
         
-        try:
-            logger.info(f"Executing step: {current_step}")
-            globals()[current_step]()
-        except Exception as e:
-            logger.error(f"Step {current_step} failed: {e}")
-            # Put the failed step back in the queue
-            deployment_queue.appendleft(current_step)
-            logger.info(f"Will retry {current_step} in 5 seconds...")
-            time.sleep(5)
-            continue
-    
-    logger.info("🎉 Deployment complete.")
+        logger.info("🎉 Deployment complete.")
+    except Exception as e:
+        logger.error(f"Deployment failed: {e}")
+        sys.exit(1)
 
 if __name__ == "__main__":
     try:
